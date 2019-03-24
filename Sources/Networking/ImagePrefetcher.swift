@@ -260,17 +260,19 @@ public class ImagePrefetcher {
     }
     
     func reportCompletionOrStartNext() {
-        if let resource = self.pendingResources.popFirst() {
-            startPrefetching(resource)
-        } else {
-            guard tasks.isEmpty else { return }
-            handleComplete()
+        CallbackQueue.mainCurrentOrAsync.execute {
+            if let resource = self.pendingResources.popFirst() {
+                self.startPrefetching(resource)
+            } else {
+                guard self.tasks.isEmpty else { return }
+                self.handleComplete()
+            }
         }
     }
     
     func handleComplete() {
         // The completion handler should be called on the main thread
-        DispatchQueue.main.safeAsync {
+        CallbackQueue.mainCurrentOrAsync.execute {
             self.completionHandler?(self.skippedResources, self.failedResources, self.completedResources)
             self.completionHandler = nil
             self.progressBlock = nil
